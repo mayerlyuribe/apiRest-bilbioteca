@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Biblioteca Digital</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f0e0c;
+      --surface: #1a1814;
+      --surface2: #232018;
+      --border: #2e2b24;
+      --accent: #c9a84c;
+      --accent2: #e8c97a;
+      --text: #f0ead8;
+      --muted: #7a7260;
+      --success: #4caf7a;
+      --error: #e05555;
+      --pending: #c9a84c;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* HEADER */
+    header {
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+      position: sticky;
+      top: 0;
+      background: var(--bg);
+      z-index: 100;
+    }
+
+    .logo {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.3rem;
+      color: var(--accent);
+      letter-spacing: 0.02em;
+    }
+
+    .logo span { color: var(--muted); font-size: 0.8rem; font-family: 'DM Mono', monospace; margin-left: 0.5rem; }
+
+    .api-badge {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.7rem;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      padding: 0.25rem 0.75rem;
+      border-radius: 2px;
+      color: var(--muted);
+    }
+
+    /* LAYOUT */
+    .layout {
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      min-height: calc(100vh - 64px);
+    }
+
+    /* SIDEBAR */
+    nav {
+      border-right: 1px solid var(--border);
+      padding: 1.5rem 0;
+      position: sticky;
+      top: 64px;
+      height: calc(100vh - 64px);
+      overflow-y: auto;
+    }
+
+    .nav-section {
+      margin-bottom: 1.5rem;
+    }
+
+    .nav-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.65rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      padding: 0 1.25rem 0.5rem;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 0.5rem 1.25rem;
+      cursor: pointer;
+      font-size: 0.85rem;
+      color: var(--muted);
+      transition: all 0.15s;
+      border-left: 2px solid transparent;
+    }
+
+    .nav-item:hover { color: var(--text); background: var(--surface); }
+    .nav-item.active { color: var(--accent); border-left-color: var(--accent); background: var(--surface); }
+
+    .nav-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--border);
+      flex-shrink: 0;
+    }
+    .nav-item.active .nav-dot { background: var(--accent); }
+
+    /* MAIN */
+    main {
+      padding: 2rem;
+      max-width: 900px;
+    }
+
+    .section { display: none; }
+    .section.active { display: block; }
+
+    .section-header {
+      margin-bottom: 2rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .section-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.6rem;
+      color: var(--text);
+      margin-bottom: 0.25rem;
+    }
+
+    .section-desc {
+      font-size: 0.85rem;
+      color: var(--muted);
+      font-family: 'DM Mono', monospace;
+    }
+
+    /* CARDS */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .card-title {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.8rem;
+      color: var(--accent);
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .method-badge {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.65rem;
+      padding: 0.15rem 0.5rem;
+      border-radius: 2px;
+      font-weight: 500;
+    }
+
+    .method-get { background: #1a3a2a; color: #4caf7a; border: 1px solid #2a5a3a; }
+    .method-post { background: #1a2a3a; color: #4c8faf; border: 1px solid #2a3a5a; }
+    .method-put { background: #3a2a1a; color: #af8f4c; border: 1px solid #5a3a2a; }
+    .method-delete { background: #3a1a1a; color: #af4c4c; border: 1px solid #5a2a2a; }
+    .method-patch { background: #2a1a3a; color: #8f4caf; border: 1px solid #3a2a5a; }
+
+    /* FORM */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+    }
+
+    .form-grid.single { grid-template-columns: 1fr; }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .field.full { grid-column: 1 / -1; }
+
+    label {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    input, select, textarea {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      padding: 0.55rem 0.75rem;
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.85rem;
+      outline: none;
+      transition: border-color 0.15s;
+      width: 100%;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--accent);
+    }
+
+    select option { background: var(--surface2); }
+
+    textarea { resize: vertical; min-height: 80px; }
+
+    /* BUTTONS */
+    .btn {
+      padding: 0.6rem 1.25rem;
+      border: none;
+      border-radius: 3px;
+      cursor: pointer;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.75rem;
+      letter-spacing: 0.05em;
+      transition: all 0.15s;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #0f0e0c;
+      font-weight: 500;
+    }
+    .btn-primary:hover { background: var(--accent2); }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid var(--border);
+    }
+    .btn-ghost:hover { color: var(--text); border-color: var(--muted); }
+
+    .btn-row {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+
+    /* RESPONSE */
+    .response-box {
+      margin-top: 1rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .response-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.5rem 0.75rem;
+      border-bottom: 1px solid var(--border);
+      font-family: 'DM Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--muted);
+    }
+
+    .status-pill {
+      padding: 0.15rem 0.5rem;
+      border-radius: 2px;
+      font-size: 0.65rem;
+    }
+    .status-ok { background: #1a3a2a; color: var(--success); }
+    .status-err { background: #3a1a1a; color: var(--error); }
+
+    .response-body {
+      padding: 0.75rem;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.75rem;
+      color: #a0c8a0;
+      white-space: pre-wrap;
+      word-break: break-all;
+      max-height: 300px;
+      overflow-y: auto;
+      line-height: 1.6;
+    }
+
+    .response-body.error { color: #e08080; }
+    .response-body.empty { color: var(--muted); font-style: italic; }
+
+    /* LIST */
+    .list-items { display: flex; flex-direction: column; gap: 0.5rem; }
+
+    .list-item {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      padding: 0.75rem 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 1rem;
+    }
+
+    .list-item-main { flex: 1; min-width: 0; }
+
+    .list-item-name {
+      font-size: 0.9rem;
+      color: var(--text);
+      margin-bottom: 0.2rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .list-item-meta {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.65rem;
+      color: var(--muted);
+    }
+
+    .tag {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.65rem;
+      padding: 0.15rem 0.4rem;
+      border-radius: 2px;
+      white-space: nowrap;
+    }
+
+    .tag-active { background: #1a3a2a; color: var(--success); }
+    .tag-returned { background: #1a2a3a; color: #4c8faf; }
+    .tag-overdue { background: #3a1a1a; color: var(--error); }
+    .tag-pending { background: #2a2218; color: var(--pending); }
+
+    /* DIVIDER */
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 1.5rem 0;
+    }
+
+    /* EMPTY */
+    .empty {
+      text-align: center;
+      padding: 2rem;
+      color: var(--muted);
+      font-family: 'DM Mono', monospace;
+      font-size: 0.8rem;
+    }
+
+    /* LOADING */
+    .loading {
+      display: inline-block;
+      width: 10px; height: 10px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+      margin-right: 0.5rem;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* SCROLLBAR */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Biblioteca Digital <span>v1.0</span></div>
+  <div class="api-badge">localhost:3000</div>
+</header>
+
+<div class="layout">
+  <nav>
+    <div class="nav-section">
+      <div class="nav-label">Auth</div>
+      <div class="nav-item active" onclick="show('auth')">
+        <div class="nav-dot"></div> Autenticación
+      </div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">Catálogo</div>
+      <div class="nav-item" onclick="show('authors')">
+        <div class="nav-dot"></div> Autores
+      </div>
+      <div class="nav-item" onclick="show('books')">
+        <div class="nav-dot"></div> Libros
+      </div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">Gestión</div>
+      <div class="nav-item" onclick="show('readers')">
+        <div class="nav-dot"></div> Lectores
+      </div>
+      <div class="nav-item" onclick="show('loans')">
+        <div class="nav-dot"></div> Préstamos
+      </div>
+    </div>
+  </nav>
+
+  <main>
+
+    <!-- AUTH -->
+    <div class="section active" id="section-auth">
+      <div class="section-header">
+        <div class="section-title">Autenticación</div>
+        <div class="section-desc">POST /api/auth/register · POST /api/auth/login</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><span class="method-badge method-post">POST</span> Registrar usuario</div>
+        <div class="form-grid">
+          <div class="field">
+            <label>Nombre</label>
+            <input type="text" id="reg-nombre" placeholder="Ana López" />
+          </div>
+          <div class="field">
+            <label>Email</label>
+            <input type="email" id="reg-email" placeholder="ana@email.com" />
+          </div>
+          <div class="field">
+            <label>Password</label>
+            <input type="password" id="reg-password" placeholder="••••••" />
+          </div>
+          <div class="field">
+            <label>Rol</label>
+            <select id="reg-rol">
+              <option value="librarian">librarian</option>
+              <option value="admin">admin</option>
+            </select>
+          </div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-primary" onclick="register()">Registrar</button>
+        </div>
+        <div id="res-register"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><span class="method-badge method-post">POST</span> Iniciar sesión</div>
+        <div class="form-grid">
+          <div class="field">
+            <label>Email</label>
+            <input type="email" id="login-email" placeholder="ana@email.com" />
+          </div>
+          <div class="field">
+            <label>Password</label>
+            <input type="password" id="login-password" placeholder="••••••" />
+          </div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-primary" onclick="login()">Iniciar sesión</button>
+        </div>
+        <div id="res-login"></div>
+      </div>
+    </div>
+
+    <!-- AUTHORS -->
+    <div class="section" id="section-authors">
+      <div class="section-header">
+        <div class="section-title">Autores</div>
+        <div class="section-desc">GET · POST · PUT · DELETE /api/authors</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><span class="method-badge method-post">POST</span> Crear autor</div>
+        <div class="form-grid">
+          <div class="field">
+            <label>Nombre</label>
+            <input type="text" id="aut-nombre" placeholder="Gabriel García Márquez" />
+          </div>
+          <div class="field">
+            <label>Nacionalidad</label>
+            <input type="text" id="aut-nacionalidad" placeholder="Colombiana" />
+          </div>
+          <div class="field">
+            <label>Fecha de nacimiento</label>
+            <input type="date" id="aut-fecha" />
+          </div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-primary" onclick="createAuthor()">Crear</button>
+        </div>
+        <div id="res-author-create"></div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="card">
+        <div class="card-title"><span class="method-badge method-get">GET</span> Listar autores</div>
+        <div class="btn-row">
+          <button class="btn btn-primary" onclick="getAuthors()">Cargar autores</button>
+        </div>
+        <div id="list-authors" style="margin-top:1rem"></div>
+      </div>
+    </div>
+
+    <!-- BOOKS -->
+    <div class="section" id="section-books">
+      <div class="section-header">
+        <div class="section-title">Libros</div>
+        <div class="section-desc">GET · POST · PUT · DELETE /api/books</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><span class="method-badge method-post">POST</span> Crear libro</div>
+        <div class="form-grid">
+          <div class="field">
+            <label>Título</label>
+            <input type="text" id="book-titulo" placeholder="Cien Años de Soledad" />
+          </div>
+          <div class="field">
+            <label>ISBN</label>
+            <input type="text" id="book-isbn" placeholder="978-0-06-088328-7" />
+          </div>
+          <div class="field">
+            <label>Género</label>
+            <select id="book-genero">
+              <option value="fiction">fiction</option>
+              <option value="non-fiction">non-fiction</option>
+              <option value="sci-fi">sci-fi</option>
+              <option value="history">history</option>
+              <option value="other">other</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Año</label>
+            <input type="number" id="book-anio" placeholder="1967" />
+          </div>
+          <div class="field">
+            <label>Copias disponibles</label>
+            <input type="number" id="book-copias" placeholder="5" />
+          </div>
+          <div class="field">
+            <label>ID del autor</label>
+            <input type="text" id="book-author" placeholder="664a2c..." />
+          </div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-primary" onclick="createBook()">Crear</button>
+        </div>
+        <div id="res-book-create"></div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="card">
+        <div class="card-title"><span class="method-badge method-get">GET</span> Listar libros</div>
+        <div class="form-grid">
+          <div class="field">
+            <label>Filtrar por género (opcional)</label>
+            <select id="filter-genre">
+              <option value="">Todos</option>
+              <option value="fiction">fiction</option>
+              <option value="non-fiction">non-fiction</option>
+              <option value="sci-fi">sci-fi</option>
+              <option value="history">history</option>
+              <option value="other">other</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Filtrar por authorId (opcional)</label>
+            <input type="text" id="filter-authorid" placeholder="664a2c..." />
+          </div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-primary" onclick="getBooks()">Cargar libros</button>
+        </div>
+        <div id="list-books" style="margin-top:1rem"></div>
+      </div>
+    </div>
+
+    <!-- READERS -->
+    <div class="section" id="section-readers">
+      <div class="section-header">
+        <div class="section-title">Lectores</div>
+        <div class="section-desc">GET · POST · PUT · DELETE /api/readers</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><span class="method-badge method-post">POST</span> Crear lector</div>
+        <div class="form-grid">
+          <div class="field">
+            <label>Nombre</label>
+            <input type="text" id="reader-nombre" placeholder="Carlos Ruiz" />
+          </div>
+          <div class="field">
+            <label>Email</label>
+            <input type="email" id="reader-email" placeholder="carlos@email.com" />
+          </div>
+          <div class="field">
+            <label>Membresía</label>
+            <select id="reader-membresia">
+              <option value="standard">standard</option>
+              <option value="premium">premium</option>
+            </select>
+          </div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-primary" onclick="createReader()">Crear</button>
+        </div>
+        <div id="res-reader-create"></div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="card">
+        <div class="card-title"><span class="method-badge method-get">GET</span> Listar lectores</div>
+        <div class="btn-row">
+          <button class="btn btn-primary" onclick="getReaders()">Cargar lectores</button>
+        </div>
+        <div id="list-readers" style="margin-top:1rem"></div>
+      </div>
+    </div>
+
+    <!-- LOANS -->
+    <div class="section" id="section-loans">
+      <div class="section-header">
+        <div class="section-title">Préstamos</div>
+        <div class="section-desc">GET · POST · PATCH /api/loans</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title"><span class="method-badge method-post">POST</span> Crear préstamo</div>
+        <div class="form-grid">
+          <div class="field">
+            <label>Fecha de préstamo</label>
+            <input type="datetime-local" id="loan-inicio" />
+          </div>
+          <div class="field">
+            <label>Fecha devolución esperada</label>
+            <input type="datetime-local" id="loan-fin" />
+          </div>
+          <div class="field">
+            <label>ID del libro</label>
+            <input type="text" id="loan-book" placeholder="664a3e..." />
+          </div>
+          <div class="field">
+            <label>ID del lector</label>
+            <input type="text" id="loan-reader" placeholder="664a4f..." />
+          </div>
+          <div class="field full">
+            <label>Notas (opcional)</label>
+            <input type="text" id="loan-notas" placeholder="Préstamo urgente..." />
+          </div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-primary" onclick="createLoan()">Crear préstamo</button>
+        </div>
+        <div id="res-loan-create"></div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="card">
+        <div class="card-title"><span class="method-badge method-patch">PATCH</span> Cambiar estado</div>
+        <div class="form-grid">
+          <div class="field">
+            <label>ID del préstamo</label>
+            <input type="text" id="loan-status-id" placeholder="664a5a..." />
+          </div>
+          <div class="field">
+            <label>Nuevo estado</label>
+            <select id="loan-status-val">
+              <option value="active">active</option>
+              <option value="returned">returned</option>
+              <option value="overdue">overdue</option>
+            </select>
+          </div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-primary" onclick="updateLoanStatus()">Actualizar estado</button>
+        </div>
+        <div id="res-loan-status"></div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="card">
+        <div class="card-title"><span class="method-badge method-get">GET</span> Listar préstamos</div>
+        <div class="form-grid">
+          <div class="field">
+            <label>Filtrar por estado (opcional)</label>
+            <select id="filter-status">
+              <option value="">Todos</option>
+              <option value="active">active</option>
+              <option value="returned">returned</option>
+              <option value="overdue">overdue</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Filtrar por género (opcional)</label>
+            <select id="filter-loan-genre">
+              <option value="">Todos</option>
+              <option value="fiction">fiction</option>
+              <option value="non-fiction">non-fiction</option>
+              <option value="sci-fi">sci-fi</option>
+              <option value="history">history</option>
+              <option value="other">other</option>
+            </select>
+          </div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-primary" onclick="getLoans()">Cargar préstamos</button>
+        </div>
+        <div id="list-loans" style="margin-top:1rem"></div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+  const BASE = 'http://localhost:3000/api';
+
+  function show(section) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById('section-' + section).classList.add('active');
+    event.currentTarget.classList.add('active');
+  }
+
+  function renderResponse(id, data, ok) {
+    const el = document.getElementById(id);
+    el.innerHTML = `
+      <div class="response-box">
+        <div class="response-header">
+          <span>response</span>
+          <span class="status-pill ${ok ? 'status-ok' : 'status-err'}">${ok ? '200 OK' : 'ERROR'}</span>
+        </div>
+        <div class="response-body ${ok ? '' : 'error'}">${JSON.stringify(data, null, 2)}</div>
+      </div>`;
+  }
+
+  async function apiCall(method, path, body) {
+    const opts = { method, headers: { 'Content-Type': 'application/json' } };
+    if (body) opts.body = JSON.stringify(body);
+    const res = await fetch(BASE + path, opts);
+    const data = await res.json();
+    return { data, ok: res.ok };
+  }
+
+  async function register() {
+    const { data, ok } = await apiCall('POST', '/auth/register', {
+      nombre: document.getElementById('reg-nombre').value,
+      email: document.getElementById('reg-email').value,
+      password: document.getElementById('reg-password').value,
+      rol: document.getElementById('reg-rol').value,
+    });
+    renderResponse('res-register', data, ok);
+  }
+
+  async function login() {
+    const { data, ok } = await apiCall('POST', '/auth/login', {
+      email: document.getElementById('login-email').value,
+      password: document.getElementById('login-password').value,
+    });
+    renderResponse('res-login', data, ok);
+  }
+
+  async function createAuthor() {
+    const { data, ok } = await apiCall('POST', '/authors', {
+      nombre: document.getElementById('aut-nombre').value,
+      nacionalidad: document.getElementById('aut-nacionalidad').value,
+      fechaNacimiento: document.getElementById('aut-fecha').value,
+    });
+    renderResponse('res-author-create', data, ok);
+  }
+
+  async function getAuthors() {
+    const { data, ok } = await apiCall('GET', '/authors');
+    const el = document.getElementById('list-authors');
+    if (!ok || !data.data?.length) {
+      el.innerHTML = '<div class="empty">No hay autores.</div>'; return;
+    }
+    el.innerHTML = '<div class="list-items">' + data.data.map(a => `
+      <div class="list-item">
+        <div class="list-item-main">
+          <div class="list-item-name">${a.nombre}</div>
+          <div class="list-item-meta">${a.nacionalidad || '—'} · ${a.fechaNacimiento ? new Date(a.fechaNacimiento).toLocaleDateString('es') : '—'}</div>
+        </div>
+        <div class="list-item-meta">${a._id}</div>
+      </div>`).join('') + '</div>';
+  }
+
+  async function createBook() {
+    const { data, ok } = await apiCall('POST', '/books', {
+      titulo: document.getElementById('book-titulo').value,
+      isbn: document.getElementById('book-isbn').value,
+      genero: document.getElementById('book-genero').value,
+      anio: parseInt(document.getElementById('book-anio').value),
+      copiasDisponibles: parseInt(document.getElementById('book-copias').value),
+      author: document.getElementById('book-author').value,
+    });
+    renderResponse('res-book-create', data, ok);
+  }
+
+  async function getBooks() {
+    const genre = document.getElementById('filter-genre').value;
+    const authorId = document.getElementById('filter-authorid').value;
+    let qs = [];
+    if (genre) qs.push('genre=' + genre);
+    if (authorId) qs.push('authorId=' + authorId);
+    const { data, ok } = await apiCall('GET', '/books' + (qs.length ? '?' + qs.join('&') : ''));
+    const el = document.getElementById('list-books');
+    if (!ok || !data.data?.length) {
+      el.innerHTML = '<div class="empty">No hay libros.</div>'; return;
+    }
+    el.innerHTML = '<div class="list-items">' + data.data.map(b => `
+      <div class="list-item">
+        <div class="list-item-main">
+          <div class="list-item-name">${b.titulo}</div>
+          <div class="list-item-meta">${b.genero} · ${b.anio || '—'} · ${b.copiasDisponibles} copias · ${b.author?.nombre || b.author}</div>
+        </div>
+        <div class="list-item-meta">${b._id}</div>
+      </div>`).join('') + '</div>';
+  }
+
+  async function createReader() {
+    const { data, ok } = await apiCall('POST', '/readers', {
+      nombre: document.getElementById('reader-nombre').value,
+      email: document.getElementById('reader-email').value,
+      membresia: document.getElementById('reader-membresia').value,
+    });
+    renderResponse('res-reader-create', data, ok);
+  }
+
+  async function getReaders() {
+    const { data, ok } = await apiCall('GET', '/readers');
+    const el = document.getElementById('list-readers');
+    if (!ok || !data.data?.length) {
+      el.innerHTML = '<div class="empty">No hay lectores.</div>'; return;
+    }
+    el.innerHTML = '<div class="list-items">' + data.data.map(r => `
+      <div class="list-item">
+        <div class="list-item-main">
+          <div class="list-item-name">${r.nombre}</div>
+          <div class="list-item-meta">${r.email} · ${r.membresia} · ${r.activo ? 'activo' : 'inactivo'}</div>
+        </div>
+        <div class="list-item-meta">${r._id}</div>
+      </div>`).join('') + '</div>';
+  }
+
+  async function createLoan() {
+    const { data, ok } = await apiCall('POST', '/loans', {
+      fechaPrestamo: new Date(document.getElementById('loan-inicio').value).toISOString(),
+      fechaDevolucionEsperada: new Date(document.getElementById('loan-fin').value).toISOString(),
+      book: document.getElementById('loan-book').value,
+      reader: document.getElementById('loan-reader').value,
+      notas: document.getElementById('loan-notas').value || undefined,
+    });
+    renderResponse('res-loan-create', data, ok);
+  }
+
+  async function updateLoanStatus() {
+    const id = document.getElementById('loan-status-id').value;
+    const estado = document.getElementById('loan-status-val').value;
+    const { data, ok } = await apiCall('PATCH', `/loans/${id}/status`, { estado });
+    renderResponse('res-loan-status', data, ok);
+  }
+
+  async function getLoans() {
+    const status = document.getElementById('filter-status').value;
+    const genre = document.getElementById('filter-loan-genre').value;
+    let qs = [];
+    if (status) qs.push('status=' + status);
+    if (genre) qs.push('genre=' + genre);
+    const { data, ok } = await apiCall('GET', '/loans' + (qs.length ? '?' + qs.join('&') : ''));
+    const el = document.getElementById('list-loans');
+    if (!ok || !data.data?.length) {
+      el.innerHTML = '<div class="empty">No hay préstamos.</div>'; return;
+    }
+    const tagClass = { active: 'tag-active', returned: 'tag-returned', overdue: 'tag-overdue', pending: 'tag-pending' };
+    el.innerHTML = '<div class="list-items">' + data.data.map(l => `
+      <div class="list-item">
+        <div class="list-item-main">
+          <div class="list-item-name">${l.book?.titulo || l.book}</div>
+          <div class="list-item-meta">${l.reader?.nombre || l.reader} · ${new Date(l.fechaPrestamo).toLocaleDateString('es')} → ${new Date(l.fechaDevolucionEsperada).toLocaleDateString('es')}</div>
+        </div>
+        <span class="tag ${tagClass[l.estado] || ''}">${l.estado}</span>
+      </div>`).join('') + '</div>';
+  }
+</script>
+
+</body>
+</html>
